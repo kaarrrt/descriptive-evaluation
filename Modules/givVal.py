@@ -5,7 +5,7 @@ import nav_test
 import pyrebase
 import requests
 from fuzzywuzzy import fuzz
-
+import nlp_matching as key
 import cosine_similarity as keywordVal
 import configurations
 
@@ -24,20 +24,20 @@ n = 0
 '''
 
 
-def givVal(model_answer, keywords, answer, out_of,ques_no):
+def givVal(model_answer, keywords, answer, out_of, ques_no):
     # KEYWORDS =>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     # TODO : Enhacnce this thing
     if (len(answer.split())) <= 5:
-        print("QUESTION NUMBER",ques_no)
+        print("QUESTION NUMBER", ques_no)
         return 0
     #
-    # count = 0
-    # keywords_count = len(keywords)
-    # for i in range(keywords_count):
-    #     if keywords[i] in answer:
-    #         # print (keywords[i])
-    #         count = count + 1
-    # k = 0
+    count = 0
+    keywords_count = len(keywords)
+    for i in range(keywords_count):
+        if keywords[i] in answer:
+            # print (keywords[i])
+            count = count + 1
+    k = 0
     # if count == keywords_count:
     #     k = 1
     # elif count == (keywords_count - 1):
@@ -50,7 +50,8 @@ def givVal(model_answer, keywords, answer, out_of,ques_no):
     #     k = 5
     # elif count == (keywords_count - 5):
     #     k = 6
-    k = keywordVal.givKeywordsValue(model_answer, answer)
+    # k = keywordVal.givKeywordsValue(model_answer, answer)
+    k = key.get_keyword_matching_score(model_answer, keywords, answer)
     # print("checkkkkkk", k)
 
     # GRAMMAR =>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -62,7 +63,7 @@ def givVal(model_answer, keywords, answer, out_of,ques_no):
     #     g = 0
     # else:
     #     g = 1
-    g = errors.grammar_error_count(answer,k)
+    g = errors.grammar_error_count(answer, k)
     # QST =>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     # print("fuzz1 ratio: ", fuzz.ratio(model_answer, answer))
     #q = math.ceil(fuzz.token_set_ratio(model_answer, answer) / 16.67)
@@ -70,10 +71,10 @@ def givVal(model_answer, keywords, answer, out_of,ques_no):
     q1 = fuzz.token_sort_ratio(model_answer, answer)
     q2 = fuzz.partial_ratio(model_answer, answer)
     q = 6-math.ceil((q1 + q2) / 2 * 6 / 100)+1
-    
+
     # if no_of_errors > 0:
     #     q -= 1
-    print("QUESTION NUMBER",ques_no)
+    print("QUESTION NUMBER", ques_no)
     print("Keywords : ", k)
     print("Grammar  : ", g)
     print("QST      : ", q)
@@ -129,21 +130,24 @@ for each_users_answers in all_answers.each():
     print("\n\n" + each_users_answers.val()['email'])
 
     answer = each_users_answers.val()['a1']
-    result = givVal(model_answer1, keywords1, answer, out_of1,1)
+    result = givVal(model_answer1, keywords1, answer, out_of1, 1)
     print("Marks : " + str(result))
-    db.child("answers").child(each_users_answers.key()).update({"result1": result})
+    db.child("answers").child(
+        each_users_answers.key()).update({"result1": result})
 
     # For the Second answer ->
     answer = each_users_answers.val()['a2']
-    result = givVal(model_answer2, keywords2, answer, out_of2,2)
+    result = givVal(model_answer2, keywords2, answer, out_of2, 2)
     print("Marks : " + str(result))
-    db.child("answers").child(each_users_answers.key()).update({"result2": result})
+    db.child("answers").child(
+        each_users_answers.key()).update({"result2": result})
 
     # For the third answer ->
     answer = each_users_answers.val()['a3']
-    result = givVal(model_answer3, keywords3, answer, out_of3,3)
+    result = givVal(model_answer3, keywords3, answer, out_of3, 3)
     print("Marks : " + str(result))
-    db.child("answers").child(each_users_answers.key()).update({"result3": result})
+    db.child("answers").child(
+        each_users_answers.key()).update({"result3": result})
 
 # out_of = 5
 # result = givVal(model_answer, keywords, answer1, out_of)

@@ -1,11 +1,15 @@
-import re, math
+import re
+import math
 from collections import Counter
-import fuzzywuzzy.fuzz
+from fuzzywuzzy import fuzz
 
 WORD = re.compile(r'\w+')
 
 
 def get_cosine(vec1, vec2):
+    """
+    Calculate cosine similarity between two word frequency vectors.
+    """
     intersection = set(vec1.keys()) & set(vec2.keys())
     numerator = sum([vec1[x] * vec2[x] for x in intersection])
 
@@ -20,34 +24,41 @@ def get_cosine(vec1, vec2):
 
 
 def text_to_vector(text):
+    """
+    Convert text to word frequency vector.
+    """
     words = WORD.findall(text)
     return Counter(words)
 
 
 def givKeywordsValue(text1, text2):
+    """
+    Calculate keyword value based on cosine similarity between two texts.
+    """
     vector1 = text_to_vector(text1)
     vector2 = text_to_vector(text2)
-    cosine = round(get_cosine(vector1, vector2),2)*100
-    kval = 0
-    if cosine > 90:
-        kval = 1
-    elif cosine > 80:
-        kval = 2
-    elif cosine > 60:
-        kval = 3
-    elif cosine > 40:
-        kval = 4
-    elif cosine > 20:
-        kval = 5
+    cosine_similarity = round(get_cosine(vector1, vector2), 2) * 100
+
+    # Fine-tune keyword value based on cosine similarity
+    keyword_value = 0
+    if cosine_similarity > 90:
+        keyword_value = 1
+    elif cosine_similarity > 80:
+        keyword_value = 2
+    elif cosine_similarity > 70:
+        keyword_value = 3
+    elif cosine_similarity > 60:
+        keyword_value = 4
+    elif cosine_similarity > 50:
+        keyword_value = 5
     else:
-        kval = 6
-    return kval
+        keyword_value = 6
 
-#
-# text1 = "Encapsulation is an object-oriented programming concept that combines data and the functions that manipulate it into a single unit called a class. This process binds together the relevant data and its associated functions, while also hiding the implementation details from the user through data hiding. By encapsulating data, we can prevent outside interference and misuse, while also achieving a strong form of abstraction through the selective exposure of only relevant data."
+    # Further refine keyword value based on fuzzywuzzy token set ratio
+    token_set_ratio = fuzz.token_set_ratio(text1, text2)
+    if token_set_ratio > 80:
+        keyword_value = max(1, keyword_value)
+    elif token_set_ratio > 60:
+        keyword_value = max(2, keyword_value)
 
-# text2 = "Encapsulation is an object-oriented programming concept that combines data and the functions that manipulate it into a single unit called a class. This process binds together the relevant data and its associated functions, while also hiding the implementation details from the user through data hiding. By encapsulating data, we can prevent outside interference and misuse, while also achieving a strong form of abstraction through the selective exposure of only relevant data."
-
-# a = givKeywordsValue(text1=text1, text2=text2)
-# print(a)
-# print('Fuzzywuzzy: ', fuzzywuzzy.fuzz.token_set_ratio(vector1,vector2))
+    return keyword_value
