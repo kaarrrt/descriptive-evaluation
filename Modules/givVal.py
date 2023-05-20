@@ -1,4 +1,6 @@
 import math
+from flask import Flask
+from flask_mail import Mail, Message
 import re
 import givErr as errors
 import nav_test
@@ -8,6 +10,18 @@ from fuzzywuzzy import fuzz
 import nlp_matching as key
 import cosine_similarity as keywordVal
 import configurations
+
+from flask import Flask
+from flask_mail import Mail, Message
+app = Flask(__name__)
+app.config['MAIL_SERVER'] = 'smtp.googlemail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USERNAME'] = '19b03@sdmit.in'
+app.config['MAIL_PASSWORD'] = 'kqektaorwhexgrvz'
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_DEFAULT_SENDER'] = '19b03@sdmit.in'
+
+mail = Mail(app)
 
 # TODO- Accuracy prediction library
 '''
@@ -123,6 +137,14 @@ keywords3 = db.child("model_answers").get().val()[3]['keywords']
 # print(keywords3)
 
 
+def send_results(email, r1, r2, r3):
+    with app.app_context():
+        msg = Message("Results of Examination", recipients=[email])
+        msg.body = "Thank you for attending!!\nHere are your results:\n\nQuestion 1: {}\nQuestion 2: {}\nQuestion 3: {}\nTotal: {}".format(
+            r1, r2, r3, (r1+r2+r3))
+        mail.send(msg)
+
+
 all_answers = db.child("answers").get()
 
 for each_users_answers in all_answers.each():
@@ -131,6 +153,7 @@ for each_users_answers in all_answers.each():
 
     answer = each_users_answers.val()['a1']
     result = givVal(model_answer1, keywords1, answer, out_of1, 1)
+    r1 = result
     print("Marks : " + str(result))
     db.child("answers").child(
         each_users_answers.key()).update({"result1": result})
@@ -138,6 +161,7 @@ for each_users_answers in all_answers.each():
     # For the Second answer ->
     answer = each_users_answers.val()['a2']
     result = givVal(model_answer2, keywords2, answer, out_of2, 2)
+    r2 = result
     print("Marks : " + str(result))
     db.child("answers").child(
         each_users_answers.key()).update({"result2": result})
@@ -145,9 +169,11 @@ for each_users_answers in all_answers.each():
     # For the third answer ->
     answer = each_users_answers.val()['a3']
     result = givVal(model_answer3, keywords3, answer, out_of3, 3)
+    r3 = result
     print("Marks : " + str(result))
     db.child("answers").child(
         each_users_answers.key()).update({"result3": result})
+    send_results(each_users_answers.val()['email'], r1, r2, r3)
 
 # out_of = 5
 # result = givVal(model_answer, keywords, answer1, out_of)
@@ -159,3 +185,5 @@ for each_users_answers in all_answers.each():
 # qst1 = answer1.split('Example' or 'eg' or 'example')
 
 # print(qst1[1])
+if __name__ == '__main__':
+    app.run()
